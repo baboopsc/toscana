@@ -1,0 +1,32 @@
+{
+  "name": "toscana-pos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Toscana Ristorante — yerel ağda çalışan sipariş sistemi (garson, kasa, mutfak)",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "setup": "node scripts/setup-env.mjs && npm run db:setup",
+    "dev": "concurrently -k -n sunucu,arayuz -c green,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server",
+    "db:setup": "npm run db:create -w server && npm run db:generate -w server && npm run db:migrate -w server && npm run db:seed -w server",
+    "db:create": "npm run db:create -w server",
+    "db:generate": "npm run db:generate -w server",
+    "db:migrate": "npm run db:migrate -w server",
+    "db:seed": "npm run db:seed -w server",
+    "db:studio": "npm run db:studio -w server",
+    "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client",
+    "test": "npm run test -w shared"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

@@ -1,0 +1,18 @@
+# Render Blueprint: tek bir web servisi (Express + Socket.io + derlenmiş React), veritabanı Neon'da.
+# Render panelinde: New → Blueprint → bu repoyu seçin. DATABASE_URL değerini sizden ister.
+services:
+  - type: web
+    name: toscana
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install --include=dev && npm run db:generate && npm run build && npm run db:migrate
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true

@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/* Renkler menünün kâğıdından, mürekkebinden, zeytin dalından ve "YENİ" kırmızısından. */
+@theme {
+  --color-cream: #f6f1e7;
+  --color-paper: #fbf8f2;
+  --color-ink: #1f2a30;
+  --color-ink-soft: #5b6870;
+  --color-line: #ddd6c8;
+  --color-olive: #6b7445;
+  --color-olive-soft: #ebeddf;
+  --color-terracotta: #b23a2e;
+  --color-terracotta-soft: #f6e3df;
+  --color-basil: #2f6b3a;
+  --color-basil-soft: #dfece2;
+  --color-amber: #8a5a00;
+  --color-amber-soft: #fcecc4;
+
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-white font-sans text-ink antialiased;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* iOS'un odaklanınca yakınlaştırmasını engeller */
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.animate-shake {
+  animation: shake 320ms ease-in-out;
+}
+
+@keyframes ticket-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+.ticket-in {
+  animation: ticket-in 280ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Bilgi fişi: ekranda gizli, yazdırırken sadece o görünür (80 mm termal yazıcı). */
+.receipt {
+  display: none;
+}
+
+@media print {
+  body.printing-receipt * {
+    visibility: hidden;
+  }
+  body.printing-receipt .receipt,
+  body.printing-receipt .receipt * {
+    visibility: visible;
+  }
+  body.printing-receipt .receipt {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    color: #000;
+    font-family: ui-monospace, "Consolas", monospace;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  @page {
+    margin: 4mm;
+  }
+}

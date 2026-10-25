@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StaffRole {
+  ADMIN
+  CASHIER
+  WAITER
+  KITCHEN
+}
+
+enum OrderStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum OrderItemStatus {
+  ACTIVE
+  VOID
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+}
+
+model Staff {
+  id           Int             @id @default(autoincrement())
+  name         String
+  role         StaffRole
+  pinHash      String
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  ordersOpened Order[]
+  tickets      KitchenTicket[]
+  payments     Payment[]
+  voidedItems  OrderItem[]
+}
+
+model Area {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique // "Salon", "Bahçe"
+  sortOrder Int     @default(0)
+  tables    Table[]
+}
+
+model Table {
+  id        Int     @id @default(autoincrement())
+  name      String  @unique // "S1" … "B8"
+  seats     Int     @default(4)
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+  areaId    Int
+  area      Area    @relation(fields: [areaId], references: [id])
+  orders    Order[]
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  sortOrder Int       @default(0)
+  isNew     Boolean   @default(false)
+  products  Product[]
+}
+
+model Product {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  description String?
+  price       Int // kuruş, KDV dahil
+  vatRate     Int               @default(10) // yüzde
+  isNew       Boolean           @default(false) // "YENİ" etiketi
+  isAvailable Boolean           @default(true) // false = Tükendi
+  sortOrder   Int               @default(0)
+  categoryId  Int
+  category    Category          @relation(fields: [categoryId], references: [id])
+  modifiers   ProductModifier[]
+  orderItems  OrderItem[]
+}
+
+model Modifier {
+  id         Int                 @id @default(autoincrement())
+  name       String              @unique // "Parmesan Peyniri (Ekstra)"
+  price      Int // kuruş, KDV dahil
+  isActive   Boolean             @default(true)
+  products   ProductModifier[]
+  orderItems OrderItemModifier[]
+}
+
+model ProductModifier {
+  productId  Int
+  modifierId Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  modifier   Modifier @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+
+  @@id([productId, modifierId])
+}
+
+model Order {
+  id         Int             @id @default(autoincrement())
+  status     OrderStatus     @default(OPEN)
+  openedAt   DateTime        @default(now())
+  closedAt   DateTime?
+  tableId    Int
+  table      Table           @relation(fields: [tableId], references: [id])
+  openedById Int
+  openedBy   Staff           @relation(fields: [openedById], references: [id])
+  items      OrderItem[]
+  tickets    KitchenTicket[]
+  payments   Payment[]
+
+  @@index([tableId, status])
+}
+
+model KitchenTicket {
+  id              Int         @id @default(autoincrement())
+  clientRequestId String      @unique // çift gönderim koruması
+  createdAt       DateTime    @default(now())
+  completedAt     DateTime? // null = mutfak ekranında görünür
+  orderId         Int
+  order           Order       @relation(fields: [orderId], references: [id])
+  createdById     Int
+  createdBy       Staff       @relation(fields: [createdById], references: [id])
+  items           OrderItem[]
+
+  @@index([completedAt])
+}
+
+model OrderItem {
+  id           Int                 @id @default(autoincrement())
+  productName  String // anlık kopya
+  unitPrice    Int // anlık kopya, kuruş
+  vatRate      Int // anlık kopya
+  quantity     Int
+  paidQuantity Int                 @default(0)
+  note         String?
+  status       OrderItemStatus     @default(ACTIVE)
+  voidReason   String?
+  voidedAt     DateTime?
+  createdAt    DateTime            @default(now())
+  orderId      Int
+  order        Order               @relation(fields: [orderId], references: [id])
+  ticketId     Int
+  ticket       KitchenTicket       @relation(fields: [ticketId], references: [id])
+  productId    Int
+  product      Product             @relation(fields: [productId], references: [id])
+  voidedById   Int?
+  voidedBy     Staff?              @relation(fields: [voidedById], references: [id])
+  modifiers    OrderItemModifier[]
+  paymentItems PaymentItem[]
+}
+
+model OrderItemModifier {
+  id          Int       @id @default(autoincrement())
+  name        String // anlık kopya
+  price       Int // anlık kopya, kuruş
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  modifierId  Int
+  modifier    Modifier  @relation(fields: [modifierId], references: [id])
+}
+
+model Payment {
+  id           Int           @id @default(autoincrement())
+  method       PaymentMethod
+  amount       Int // kuruş
+  createdAt    DateTime      @default(now())
+  orderId      Int
+  order        Order         @relation(fields: [orderId], references: [id])
+  receivedById Int
+  receivedBy   Staff         @relation(fields: [receivedById], references: [id])
+  items        PaymentItem[]
+}
+
+model PaymentItem {
+  id          Int       @id @default(autoincrement())
+  quantity    Int
+  amount      Int // kuruş
+  paymentId   Int
+  payment     Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+}
